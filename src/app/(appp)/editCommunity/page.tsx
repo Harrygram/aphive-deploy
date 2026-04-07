@@ -17,18 +17,22 @@ import { ImageIcon } from "lucide-react";
 import { updateCommunity } from "@/action/updateCommunity";
 import { useRouter } from "next/navigation";
 
+// ⚡ Force dynamic rendering to prevent build-time pre-render errors
+export const dynamic = "force-dynamic";
+
 export default function EditCommunityDialog({
   community,
   children,
 }: {
-  community: any;
+  community?: any; // mark optional to avoid undefined errors
   children: React.ReactNode;
 }) {
+  // Fallback values if community is undefined
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(community.title || "");
-  const [slug] = useState(community.slug || ""); // Slug is read-only
-  const [description, setDescription] = useState(community.description || "");
-  const [imagePreview, setImagePreview] = useState(community.image?.base64 || null);
+  const [name, setName] = useState(community?.title || "");
+  const [slug] = useState(community?.slug || ""); // Slug is read-only
+  const [description, setDescription] = useState(community?.description || "");
+  const [imagePreview, setImagePreview] = useState(community?.image?.base64 || null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
@@ -68,18 +72,19 @@ export default function EditCommunityDialog({
           });
         }
 
-        await updateCommunity(community.id, {
-        title: name.trim(),
-        description: description.trim(),
-        image: base64
-            ? {
-                base64,
-                filename: imageFile?.name || "image.png",
-                contentType: imageFile?.type || "image/png",
-            }
-            : null,
-        });
-
+        if (community?.id) {
+          await updateCommunity(community.id, {
+            title: name.trim(),
+            description: description.trim(),
+            image: base64
+              ? {
+                  base64,
+                  filename: imageFile?.name || "image.png",
+                  contentType: imageFile?.type || "image/png",
+                }
+              : null,
+          });
+        }
 
         router.refresh();
         setOpen(false);
