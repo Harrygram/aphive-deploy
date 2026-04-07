@@ -17,8 +17,6 @@ import { ImageIcon } from "lucide-react";
 import { updateCommunity } from "@/action/updateCommunity";
 import { useRouter } from "next/navigation";
 
-// ⚡ Force dynamic rendering to prevent build-time pre-render errors
-export const dynamic = "force-dynamic";
 
 export default function EditCommunityDialog({
   community,
