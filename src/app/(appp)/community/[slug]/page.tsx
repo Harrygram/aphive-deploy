@@ -9,14 +9,12 @@ import { db } from "@/lib/firebase";
 import { FilePen } from "lucide-react";
 import EditCommunityDialog from "@/app/(appp)/editCommunity/page";
 
+// Helper to get user info safely
 export async function getUserById(userId: string) {
   const ref = doc(db, "users", userId);
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) {
-    console.warn("User not found for ID:", userId);
-    return null;
-  }
+  if (!snap.exists()) return null;
 
   const data = snap.data();
   return {
@@ -27,6 +25,7 @@ export async function getUserById(userId: string) {
   };
 }
 
+// Format date nicely
 function formatDate(date: Date | null) {
   if (!date) return "Unknown";
   return new Intl.DateTimeFormat("en-MY", {
@@ -38,18 +37,23 @@ function formatDate(date: Date | null) {
 
 async function CommunityPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
-  const community = await getSubredditSlug(slug);
-  if (!community) return null;
 
-  const createdAt = community.createdAt as Date | null;
+  // Fetch community
+  const community = await getSubredditSlug(slug);
+  if (!community) return <p className="text-center mt-10">Community not found.</p>;
+
+  // Fetch creator
   const creator = community.moderatorId
     ? await getUserById(community.moderatorId)
     : null;
 
+  // Current logged-in user
   const user = await currentUser();
+
+  // Fetch posts
   const posts = await getPostsForSubreddit(community.id);
 
-  // Check if current user is the community creator
+  // Check if user is the creator
   const isCreator = user?.id === community.moderatorId;
 
   return (
@@ -62,7 +66,7 @@ async function CommunityPage({ params }: { params: { slug: string } }) {
               {/* Community Title + Creator Box */}
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative h-16 w-16 overflow-hidden rounded-full border bg-gray-100">
-                  {community.image?.base64 && (
+                  {community.image?.base64 ? (
                     <Image
                       src={community.image.base64}
                       alt={`${community.title} community icon`}
@@ -70,6 +74,10 @@ async function CommunityPage({ params }: { params: { slug: string } }) {
                       className="object-contain"
                       priority
                     />
+                  ) : (
+                    <div className="flex items-center justify-center h-full w-full text-gray-400">
+                      N/A
+                    </div>
                   )}
                 </div>
 
@@ -79,23 +87,27 @@ async function CommunityPage({ params }: { params: { slug: string } }) {
                   {/* Creator Box */}
                   <div className="rounded-md px-3 py-2 text-sm flex items-center gap-2">
                     <div className="relative h-8 w-8 rounded-full overflow-hidden border dark:border-gray-900 bg-white">
-                      {creator?.avatar && (
+                      {creator?.avatar ? (
                         <img
                           src={creator.avatar}
                           alt={creator.username}
                           className="h-full w-full object-cover rounded-full"
                         />
+                      ) : (
+                        <div className="flex items-center justify-center h-full w-full text-gray-400 text-xs">
+                          N/A
+                        </div>
                       )}
                     </div>
 
                     <div className="flex flex-col leading-tight">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{creator?.username}</p>
+                        <p className="text-sm font-medium">{creator?.username || "Unknown"}</p>
                         <span className="bg-blue-100 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded">
                           creator
                         </span>
 
-                        {/* Show edit button only if current user is creator */}
+                        {/* Edit button only for creator */}
                         {isCreator && (
                           <EditCommunityDialog community={community}>
                             <FilePen className="w-4 h-4 text-[#0057FF] hover:scale-110 transition-transform cursor-pointer" />
@@ -103,7 +115,7 @@ async function CommunityPage({ params }: { params: { slug: string } }) {
                         )}
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {creator?.email}
+                        {creator?.email || "No email"}
                       </p>
                     </div>
                   </div>
@@ -114,19 +126,17 @@ async function CommunityPage({ params }: { params: { slug: string } }) {
               <div className="flex flex-col sm:flex-row -mt-5 gap-4">
                 <div className="max-w-lg w-full bg-white dark:bg-black px-21 py-0">
                   {community.description && (
-                    <p
-                      className="text-sm text-gray-700 dark:text-gray-400 mb-3 whitespace-pre-line"
-                    >
+                    <p className="text-sm text-gray-700 dark:text-gray-400 mb-3 whitespace-pre-line">
                       {community.description}
                     </p>
                   )}
 
                   <div className="text-sm text-gray-600 dark:text-gray-300 -mt-2">
                     <p>
-                      <strong>Created on:</strong> {formatDate(createdAt)}
+                      <strong>Created on:</strong> {formatDate(community.createdAt as Date)}
                     </p>
                     <p>
-                      <strong>Members:</strong> {community.num_followers}
+                      <strong>Members:</strong> {community.num_followers || 0}
                     </p>
                   </div>
                 </div>
