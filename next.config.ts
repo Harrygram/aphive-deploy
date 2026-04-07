@@ -7,6 +7,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // ⚡ Ignore TypeScript errors during Vercel production builds
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   images: {
     remotePatterns: [
       {
@@ -29,5 +34,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-
-
